@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, BackHandler } from 'react-native';
 import Sound from 'react-native-sound';
 import PlayerControls from '../components/PlayerControl';
@@ -15,23 +15,25 @@ const TrackDetailScreen: React.FC<TrackDetailScreenProps> = ({ route, navigation
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [sound, setSound] = useState<Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const soundRef = useRef<Sound | null>(null);
 
   useEffect(() => {
     BackHandler.addEventListener('hardwareBackPress', handleBackPress);
     return () => {
       BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
-      if (sound) {
-        sound.stop();
-        sound.release();
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
       }
     };
-  }, [sound]);
+  }, []);
 
   useEffect(() => {
-    if (sound) {
-      sound.stop();
-      sound.release();
+    if (soundRef.current) {
+      soundRef.current.stop();
+      soundRef.current.release();
     }
     if (tracks && tracks.length > 0 && tracks[currentTrackIndex]?.previewUrl) {
       const newSound = new Sound(tracks[currentTrackIndex].previewUrl, '', (error) => {
@@ -39,36 +41,38 @@ const TrackDetailScreen: React.FC<TrackDetailScreenProps> = ({ route, navigation
           console.log('Failed to load the sound', error);
           return;
         }
-        setSound(newSound);
-        newSound.getDuration((seconds) => setDuration(seconds));
+        soundRef.current = newSound;
+        newSound.getDuration((seconds) => setDuration(Math.ceil(seconds)));
         newSound.play(() => {
           setIsPlaying(false); // Callback after playback completes (optional)
+          setCurrentTime(0); // Reset current time when playback completes
         });
         setIsPlaying(true); // Start playing when new sound is loaded
+        newSound.setCurrentTime(currentTime);
       });
     }
     return () => {
-      if (sound) {
-        sound.stop();
-        sound.release();
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
       }
     };
   }, [currentTrackIndex]);
 
   const handleBackPress = () => {
-    if (sound) {
-      sound.stop();
-      sound.release();
+    if (soundRef.current) {
+      soundRef.current.stop();
+      soundRef.current.release();
     }
     return false; // Prevent default behavior (exit the app)
   };
 
   const playPauseHandler = () => {
-    if (!sound) return;
+    if (!soundRef.current) return;
     if (isPlaying) {
-      sound.pause();
+      soundRef.current.pause();
     } else {
-      sound.play(() => {
+      soundRef.current.play(() => {
         setIsPlaying(false);
       });
     }
@@ -76,23 +80,24 @@ const TrackDetailScreen: React.FC<TrackDetailScreenProps> = ({ route, navigation
   };
 
   const nextTrackHandler = () => {
-    if (!sound) return;
-    sound.stop();
+    if (!soundRef.current) return;
+    soundRef.current.stop();
     setCurrentTrackIndex((prevIndex) => (prevIndex + 1) % tracks.length);
     setIsPlaying(false);
   };
 
   const prevTrackHandler = () => {
-    if (!sound) return;
-    sound.stop();
+    if (!soundRef.current) return;
+    soundRef.current.stop();
     setCurrentTrackIndex((prevIndex) => (prevIndex - 1 + tracks.length) % tracks.length);
     setIsPlaying(false);
   };
 
   const forward5SecondsHandler = () => {
-    if (!sound) return;
-    sound.getCurrentTime((seconds) => {
-      sound.setCurrentTime(seconds + 5);
+    if (!soundRef.current) return;
+    soundRef.current.getCurrentTime((seconds) => {
+      soundRef.current?.setCurrentTime(seconds + 5);
+      setCurrentTime(seconds + 5);
     });
   };
 
@@ -104,7 +109,7 @@ const TrackDetailScreen: React.FC<TrackDetailScreenProps> = ({ route, navigation
         <>
           <Text style={styles.trackName}>{currentTrack.name}</Text>
           <Text style={styles.trackArtists}>{currentTrack.artistName?.join(', ')}</Text>
-          <Text style={styles.duration}>{formatDuration(duration)}</Text>
+          <Text style={styles.duration}>{formatDuration(currentTime)} / {formatDuration(duration ?? 0)}</Text>
           <PlayerControls
             isPlaying={isPlaying}
             onPlayPause={playPauseHandler}

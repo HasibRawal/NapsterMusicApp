@@ -10,9 +10,9 @@ export interface Album {
   export interface Track {
     id: string;
     name: string;
-    artistName: string;
-    previewURL: string;
+    artistName: string[];
     albumCoverUrl: string;
-    duration: number;
+    previewUrl: string;
+    playbackSeconds: number; // Change length to playbackSeconds
   }
   

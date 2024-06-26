@@ -36,12 +36,13 @@ const AlbumDetailScreen: React.FC<AlbumDetailScreenProps> = ({ route, navigation
       {albumCoverUrl ? <Image source={{ uri: albumCoverUrl }} style={styles.cover} /> : null}
       <Text style={styles.trackCount}>{tracks.length} tracks</Text>
       <FlatList
+      showsVerticalScrollIndicator={false}
         data={tracks}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TrackItem
             track={item}
-            onPress={() => navigation.navigate('TrackDetail', { tracks:item })}
+            onPress={() => navigation.navigate('TrackDetail', { tracks })}
           />
         )}
       />

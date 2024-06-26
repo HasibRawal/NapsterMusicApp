@@ -24,9 +24,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const MainNavigator = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="AlbumList">
-        <Stack.Screen name="AlbumList" component={AlbumListScreen} options={{ title: 'Albums' }} />
+    <NavigationContainer >
+      <Stack.Navigator screenOptions={{headerStyle:{backgroundColor:'grey'}}} initialRouteName="AlbumList">
+        <Stack.Screen  name="AlbumList" component={AlbumListScreen} options={{ title: 'Albums' }} />
         <Stack.Screen name="AlbumDetail" component={AlbumDetailScreen} options={{ title: 'Album Details' }} />
         <Stack.Screen name="TrackDetail" component={TrackScreen} options={{ title: 'Track Details' }} />
       </Stack.Navigator>
